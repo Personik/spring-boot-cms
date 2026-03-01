@@ -27,6 +27,8 @@ services:
         "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.MySQLDialect",
         "spring.jpa.hibernate.ddl-auto" : "update"
       }'
+      CMS_JWT_SECRET: $CMS_JWT_SECRET
+      CMS_JWT_EXPIRATION_MS: $CMS_JWT_EXPIRATION_MS
     volumes:
       - .m2:/root/.m2
     stdin_open: true
