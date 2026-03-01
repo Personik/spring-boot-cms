@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,17 +38,20 @@ public class PostController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('USER', 'SUPERADMIN')")
     public PostResponse create(@Valid @RequestBody PostRequest request) {
         return postService.createPost(request);
     }
 
     @PutMapping("/{postId}")
+    @PreAuthorize("hasAnyRole('USER', 'SUPERADMIN')")
     public PostResponse update(@PathVariable Long postId, @Valid @RequestBody PostRequest request) {
         return postService.updatePost(postId, request);
     }
 
     @DeleteMapping("/{postId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('USER', 'SUPERADMIN')")
     public void delete(@PathVariable Long postId) {
         postService.deletePost(postId);
     }
