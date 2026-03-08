@@ -1,12 +1,16 @@
 package com.cms.config;
 
+import com.cms.domain.Event;
 import com.cms.domain.Post;
 import com.cms.domain.Tenant;
 import com.cms.domain.User;
 import com.cms.domain.UserRole;
+import com.cms.repository.EventRepository;
 import com.cms.repository.PostRepository;
 import com.cms.repository.TenantRepository;
 import com.cms.repository.UserRepository;
+
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -21,6 +25,7 @@ public class DataSeeder implements CommandLineRunner {
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final EventRepository eventRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -91,6 +96,30 @@ public class DataSeeder implements CommandLineRunner {
         post3.setAuthor(superadmin);
         postRepository.save(post3);
 
-        log.info("Seeding complete: 1 tenant, 2 users, 3 posts.");
+        Event event1 = new Event();
+        event1.setTitle("Spring Boot Workshop");
+        event1.setDescription("Hands-on workshop covering Spring Boot fundamentals and best practices.");
+        event1.setStartDateTime(LocalDateTime.now().plusDays(14));
+        event1.setTenant(tenant);
+        event1.setAuthor(normalUser);
+        eventRepository.save(event1);
+
+        Event event2 = new Event();
+        event2.setTitle("Tech Conference 2026");
+        event2.setDescription("Annual technology conference with talks on microservices, cloud, and AI.");
+        event2.setStartDateTime(LocalDateTime.now().plusMonths(2));
+        event2.setTenant(tenant);
+        event2.setAuthor(normalUser);
+        eventRepository.save(event2);
+
+        Event event3 = new Event();
+        event3.setTitle("Security Best Practices Webinar");
+        event3.setDescription("Live webinar on securing REST APIs, JWT handling, and OWASP top 10.");
+        event3.setStartDateTime(LocalDateTime.now().plusDays(30));
+        event3.setTenant(tenant);
+        event3.setAuthor(superadmin);
+        eventRepository.save(event3);
+
+        log.info("Seeding complete: 1 tenant, 2 users, 3 posts, 3 events.");
     }
 }
