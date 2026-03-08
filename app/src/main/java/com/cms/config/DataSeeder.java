@@ -43,13 +43,6 @@ public class DataSeeder implements CommandLineRunner {
         normalUser.setTenant(tenant);
         normalUser = userRepository.save(normalUser);
 
-        User reader = new User();
-        reader.setUsername("reader");
-        reader.setPassword(passwordEncoder.encode("reader123"));
-        reader.setRole(UserRole.READER);
-        reader.setTenant(tenant);
-        userRepository.save(reader);
-
         User superadmin = new User();
         superadmin.setUsername("admin");
         superadmin.setPassword(passwordEncoder.encode("admin123"));
@@ -98,6 +91,6 @@ public class DataSeeder implements CommandLineRunner {
         post3.setAuthor(superadmin);
         postRepository.save(post3);
 
-        log.info("Seeding complete: 1 tenant, 3 users, 3 posts.");
+        log.info("Seeding complete: 1 tenant, 2 users, 3 posts.");
     }
 }
