@@ -31,6 +31,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/events/**").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
                     .anyRequest().authenticated()
             )

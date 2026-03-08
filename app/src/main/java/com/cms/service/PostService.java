@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +29,8 @@ public class PostService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> listPosts(Pageable pageable) {
-        Long tenantId = TenantContext.getTenantId();
+    public Page<PostResponse> listPosts(Long requestTenantId, Pageable pageable) {
+        Long tenantId = resolveReadTenantId(requestTenantId);
         if (tenantId == null) {
             return postRepository.findAll(pageable).map(this::toResponse);
         }
@@ -37,13 +38,15 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostResponse getPost(Long postId) {
-        Long tenantId = TenantContext.getTenantId();
+    public PostResponse getPost(Long postId, Long requestTenantId) {
+        Long tenantId = resolveReadTenantId(requestTenantId);
         Post post;
         if (tenantId == null) {
-            post = postRepository.findById(postId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+            post = postRepository.findById(postId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
         } else {
-            post = postRepository.findByIdAndTenantId(postId, tenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+            post = postRepository.findByIdAndTenantId(postId, tenantId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
         }
         return toResponse(post);
     }
@@ -80,24 +83,52 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    /**
+     * Resolves the tenant ID for read operations.
+     * - Authenticated normal user: forced from TenantContext (ignores param).
+     * - Authenticated superadmin: uses param if provided, null (all) otherwise.
+     * - Unauthenticated: requires the query param.
+     */
+    private Long resolveReadTenantId(Long requestTenantId) {
+        Long contextTenantId = TenantContext.getTenantId();
+        if (contextTenantId != null) {
+            return contextTenantId;
+        }
+        if (isAuthenticated()) {
+            return requestTenantId;
+        }
+        if (requestTenantId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantId query parameter is required");
+        }
+        return requestTenantId;
+    }
+
+    private boolean isAuthenticated() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getPrincipal() instanceof CmsUserPrincipal;
+    }
+
     private Post findPostWithAccessCheck(Long postId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return postRepository.findById(postId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+            return postRepository.findById(postId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
         }
-        return postRepository.findByIdAndTenantId(postId, tenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+        return postRepository.findByIdAndTenantId(postId, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
     }
 
     private Tenant resolveTenantForWrite(Long requestTenantId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId != null) {
-            return tenantRepository.findById(tenantId) .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+            return tenantRepository.findById(tenantId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
         }
-        // Superadmin: must supply tenantId in the request body
         if (requestTenantId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantId is required for superadmin post creation");
         }
-        return tenantRepository.findById(requestTenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        return tenantRepository.findById(requestTenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
     }
 
     private User requireCurrentUser() {
@@ -105,17 +136,18 @@ public class PostService {
         if (authentication == null || !(authentication.getPrincipal() instanceof CmsUserPrincipal principal)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-        return userRepository.findById(principal.getUserId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        return userRepository.findById(principal.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
     private PostResponse toResponse(Post post) {
         return new PostResponse(
-            post.getId(),
-            post.getTitle(),
-            post.getDescription(),
-            post.getContent(),
-            post.getTenant().getId(),
-            post.getAuthor().getId()
+                post.getId(),
+                post.getTitle(),
+                post.getDescription(),
+                post.getContent(),
+                post.getTenant().getId(),
+                post.getAuthor().getId()
         );
     }
 }

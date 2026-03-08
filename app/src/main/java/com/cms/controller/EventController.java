@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,13 +28,13 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping
-    public Page<EventResponse> list(Pageable pageable) {
-        return eventService.listUpcomingEvents(pageable);
+    public Page<EventResponse> list(@RequestParam(required = false) Long tenantId, Pageable pageable) {
+        return eventService.listUpcomingEvents(tenantId, pageable);
     }
 
     @GetMapping("/{eventId}")
-    public EventResponse getOne(@PathVariable Long eventId) {
-        return eventService.getEvent(eventId);
+    public EventResponse getOne(@PathVariable Long eventId, @RequestParam(required = false) Long tenantId) {
+        return eventService.getEvent(eventId, tenantId);
     }
 
     @PostMapping

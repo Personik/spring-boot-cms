@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +31,9 @@ public class EventService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<EventResponse> listUpcomingEvents(Pageable pageable) {
+    public Page<EventResponse> listUpcomingEvents(Long requestTenantId, Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
-        Long tenantId = TenantContext.getTenantId();
+        Long tenantId = resolveReadTenantId(requestTenantId);
         if (tenantId == null) {
             return eventRepository.findByStartDateTimeAfter(now, pageable).map(this::toResponse);
         }
@@ -40,13 +41,15 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public EventResponse getEvent(Long eventId) {
-        Long tenantId = TenantContext.getTenantId();
+    public EventResponse getEvent(Long eventId, Long requestTenantId) {
+        Long tenantId = resolveReadTenantId(requestTenantId);
         Event event;
         if (tenantId == null) {
-            event = eventRepository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+            event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         } else {
-            event = eventRepository.findByIdAndTenantId(eventId, tenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+            event = eventRepository.findByIdAndTenantId(eventId, tenantId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         }
         return toResponse(event);
     }
@@ -83,23 +86,46 @@ public class EventService {
         eventRepository.delete(event);
     }
 
+    private Long resolveReadTenantId(Long requestTenantId) {
+        Long contextTenantId = TenantContext.getTenantId();
+        if (contextTenantId != null) {
+            return contextTenantId;
+        }
+        if (isAuthenticated()) {
+            return requestTenantId;
+        }
+        if (requestTenantId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantId query parameter is required");
+        }
+        return requestTenantId;
+    }
+
+    private boolean isAuthenticated() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getPrincipal() instanceof CmsUserPrincipal;
+    }
+
     private Event findEventWithAccessCheck(Long eventId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            return eventRepository.findById(eventId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+            return eventRepository.findById(eventId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         }
-        return eventRepository.findByIdAndTenantId(eventId, tenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+        return eventRepository.findByIdAndTenantId(eventId, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
     }
 
     private Tenant resolveTenantForWrite(Long requestTenantId) {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId != null) {
-            return tenantRepository.findById(tenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+            return tenantRepository.findById(tenantId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
         }
         if (requestTenantId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantId is required for superadmin event creation");
         }
-        return tenantRepository.findById(requestTenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        return tenantRepository.findById(requestTenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
     }
 
     private User requireCurrentUser() {
@@ -107,17 +133,18 @@ public class EventService {
         if (authentication == null || !(authentication.getPrincipal() instanceof CmsUserPrincipal principal)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-        return userRepository.findById(principal.getUserId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        return userRepository.findById(principal.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
     private EventResponse toResponse(Event event) {
         return new EventResponse(
-            event.getId(),
-            event.getTitle(),
-            event.getDescription(),
-            event.getStartDateTime(),
-            event.getTenant().getId(),
-            event.getAuthor().getId()
+                event.getId(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getStartDateTime(),
+                event.getTenant().getId(),
+                event.getAuthor().getId()
         );
     }
 }
