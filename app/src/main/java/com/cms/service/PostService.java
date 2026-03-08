@@ -41,11 +41,9 @@ public class PostService {
         Long tenantId = TenantContext.getTenantId();
         Post post;
         if (tenantId == null) {
-            post = postRepository.findById(postId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+            post = postRepository.findById(postId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
         } else {
-            post = postRepository.findByIdAndTenantId(postId, tenantId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+            post = postRepository.findByIdAndTenantId(postId, tenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
         }
         return toResponse(post);
     }
@@ -97,11 +95,9 @@ public class PostService {
         }
         // Superadmin: must supply tenantId in the request body
         if (requestTenantId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "tenantId is required for superadmin post creation");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantId is required for superadmin post creation");
         }
-        return tenantRepository.findById(requestTenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        return tenantRepository.findById(requestTenantId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
     }
 
     private User requireCurrentUser() {
@@ -109,18 +105,17 @@ public class PostService {
         if (authentication == null || !(authentication.getPrincipal() instanceof CmsUserPrincipal principal)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-        return userRepository.findById(principal.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        return userRepository.findById(principal.getUserId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
     private PostResponse toResponse(Post post) {
         return new PostResponse(
-                post.getId(),
-                post.getTitle(),
-                post.getDescription(),
-                post.getContent(),
-                post.getTenant().getId(),
-                post.getAuthor().getId()
+            post.getId(),
+            post.getTitle(),
+            post.getDescription(),
+            post.getContent(),
+            post.getTenant().getId(),
+            post.getAuthor().getId()
         );
     }
 }
