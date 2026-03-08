@@ -39,8 +39,8 @@ The seeder runs only once. On subsequent restarts, existing data is left untouch
 
 ## Authentication
 
-All API calls (except login) require a JWT token in the `Authorization` header.
-Check the AuthController for the login API call.
+All API calls (except login and register) require a JWT token in the `Authorization` header.
+Check the AuthController for the login and register API calls.
 
 Use the token in subsequent requests:
 
@@ -50,28 +50,34 @@ Authorization: Bearer eyJhbG...
 
 ## API Endpoints
 
+### Auth (`/api/auth`)
+
+No authentication required.
+Check AuthController for Endpoints.
+
 ### Posts (`/api/posts`)
 
 Available to all authenticated users. Write operations are restricted to **USER** and **SUPERADMIN** roles.
+Check PostController for Endpoints .
 
-- **USER** users only see posts belonging to their own tenant.
-- **SUPERADMIN** users see posts across all tenants.
-- When a **SUPERADMIN** creates a post, they must include `"tenantId"` in the request body.
+### Events (`/api/events`)
+
+Same security rules as posts. The list endpoint only returns upcoming events (start date/time in the future).
+Check EventController for Endpoints.
 
 ### Tenants (`/api/admin/tenants`)
 
 Restricted to **SUPERADMIN** only.
-
+Check TenantController for Endpoints.
 
 ### Users (`/api/admin/users`)
 
 Restricted to **SUPERADMIN** only.
-
-`tenantId` is required for `USER` role and ignored for `SUPERADMIN`.
+Check UserController for Endpoints.
 
 ## Roles
 
 | Role | Permissions |
 |---|---|
-| **USER** | Login, read/create/update/delete posts within own tenant |
-| **SUPERADMIN** | Full access to all tenants, manage tenants, manage users, manage posts across tenants |
+| **USER** | Login, read/create/update/delete posts and events within own tenant |
+| **SUPERADMIN** | Full access to all tenants, manage tenants, manage users, manage posts and events across tenants |
