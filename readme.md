@@ -1,6 +1,6 @@
 # Spring Boot CMS
 
-A multi-tenant content management system built with Spring Boot, MySQL, and JWT authentication.
+A multi-tenant content management system built with Spring Boot, MySQL, and JWT authentication as an API.
 
 ## Prerequisites
 
