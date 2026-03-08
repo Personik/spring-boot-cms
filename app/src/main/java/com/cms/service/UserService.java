@@ -5,6 +5,7 @@ import com.cms.domain.User;
 import com.cms.domain.UserRole;
 import com.cms.dto.UserRequest;
 import com.cms.dto.UserResponse;
+import com.cms.dto.auth.RegisterRequest;
 import com.cms.repository.TenantRepository;
 import com.cms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,23 @@ public class UserService {
     public UserResponse getUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         return toResponse(user);
+    }
+
+    @Transactional
+    public UserResponse registerUser(RegisterRequest request) {
+        if (userRepository.findByUsername(request.username()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
+        }
+
+        Tenant tenant = tenantRepository.findById(request.tenantId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+
+        User user = new User();
+        user.setUsername(request.username());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRole(UserRole.USER);
+        user.setTenant(tenant);
+
+        return toResponse(userRepository.save(user));
     }
 
     @Transactional

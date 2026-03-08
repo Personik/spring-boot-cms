@@ -30,7 +30,7 @@ public class SecurityConfig {
             .httpBasic(Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
                     .anyRequest().authenticated()
             )
