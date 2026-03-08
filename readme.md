@@ -57,7 +57,7 @@ Check AuthController for Endpoints.
 
 ### Posts (`/api/posts`)
 
-Available to all authenticated users. Write operations are restricted to **USER** and **SUPERADMIN** roles.
+Write operations are restricted to **USER** and **SUPERADMIN** roles.
 Check PostController for Endpoints .
 
 ### Events (`/api/events`)
