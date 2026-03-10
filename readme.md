@@ -53,27 +53,59 @@ Authorization: Bearer eyJhbG...
 ### Auth (`/api/auth`)
 
 No authentication required.
-Check AuthController for Endpoints.
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/auth/login` | Login and receive a JWT token |
+| `POST` | `/api/auth/register` | Register a new user |
 
 ### Posts (`/api/posts`)
 
-Write operations are restricted to **USER** and **SUPERADMIN** roles.
-Check PostController for Endpoints .
+Read endpoints are public. Write operations are restricted to **USER** and **SUPERADMIN** roles.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/posts` | List posts (paginated, `tenantId` required for unauthenticated, optional for superadmin, ignored for regular users) |
+| `GET` | `/api/posts/{postId}` | Get a single post (`tenantId` required for unauthenticated, optional for superadmin, ignored for regular users) |
+| `POST` | `/api/posts` | Create a post |
+| `PUT` | `/api/posts/{postId}` | Update a post |
+| `DELETE` | `/api/posts/{postId}` | Delete a post |
 
 ### Events (`/api/events`)
 
-Same security rules as posts. The list endpoint only returns upcoming events (start date/time in the future).
-Check EventController for Endpoints.
+Read endpoints are public. Write operations are restricted to **USER** and **SUPERADMIN** roles. The list endpoint only returns upcoming events (start date/time in the future).
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/events` | List upcoming events (paginated, `tenantId` required for unauthenticated, optional for superadmin, ignored for regular users) |
+| `GET` | `/api/events/{eventId}` | Get a single event (`tenantId` required for unauthenticated, optional for superadmin, ignored for regular users) |
+| `POST` | `/api/events` | Create an event |
+| `PUT` | `/api/events/{eventId}` | Update an event |
+| `DELETE` | `/api/events/{eventId}` | Delete an event |
 
 ### Tenants (`/api/admin/tenants`)
 
 Restricted to **SUPERADMIN** only.
-Check TenantController for Endpoints.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/admin/tenants` | List tenants (paginated) |
+| `GET` | `/api/admin/tenants/{tenantId}` | Get a single tenant |
+| `POST` | `/api/admin/tenants` | Create a tenant |
+| `PUT` | `/api/admin/tenants/{tenantId}` | Update a tenant |
+| `DELETE` | `/api/admin/tenants/{tenantId}` | Delete a tenant |
 
 ### Users (`/api/admin/users`)
 
 Restricted to **SUPERADMIN** only.
-Check UserController for Endpoints.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/admin/users` | List users (paginated) |
+| `GET` | `/api/admin/users/{userId}` | Get a single user |
+| `POST` | `/api/admin/users` | Create a user |
+| `PUT` | `/api/admin/users/{userId}` | Update a user |
+| `DELETE` | `/api/admin/users/{userId}` | Delete a user |
 
 ## Roles
 
